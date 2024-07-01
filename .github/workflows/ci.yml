@@ -36,9 +36,18 @@ jobs:
           --health-retries 5
 
     env:
-      DATABASE_URL: postgres://postgres:postgres@localhost:5432/test_db
       CELERY_BROKER_URL: redis://localhost:6379/0
       CELERY_RESULT_BACKEND: redis://localhost:6379/0
+      SECRET_KEY: django-insecure-hxu4^zo=w@-budmk+rl!mvn=nqn3nlzz-2abm44+0e_#0-v=aq
+      DEBUG: True
+      POSTGRES_DB: test_db
+      POSTGRES_USER: postgres
+      POSTGRES_PASSWORD: postgres
+      POSTGRES_HOST: localhost
+      POSTGRES_PORT: 5432
+      DJANGO_SUPERUSER_USERNAME: masood
+      DJANGO_SUPERUSER_PASSWORD: 123456
+      DJANGO_SUPERUSER_EMAIL: admin@example.com
 
     steps:
     - uses: actions/checkout@v2
