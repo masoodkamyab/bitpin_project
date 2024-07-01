@@ -2,63 +2,69 @@ name: Django CI
 
 on:
   push:
-    branches:
-      - main
+    branches: [ main ]
   pull_request:
-    branches:
-      - main
+    branches: [ main ]
 
 jobs:
-  test:
-
+  build:
     runs-on: ubuntu-latest
 
     services:
       postgres:
         image: postgres:13
-        env:
-          POSTGRES_DB: bitpin_project
-          POSTGRES_USER: bitpin_user
-          POSTGRES_PASSWORD: bitpin_password
         ports:
           - 5432:5432
+        env:
+          POSTGRES_USER: postgres
+          POSTGRES_PASSWORD: postgres
+          POSTGRES_DB: test_db
         options: >-
           --health-cmd pg_isready
           --health-interval 10s
           --health-timeout 5s
           --health-retries 5
 
+      redis:
+        image: redis:latest
+        ports:
+          - 6379:6379
+        options: >-
+          --health-cmd "redis-cli ping"
+          --health-interval 10s
+          --health-timeout 5s
+          --health-retries 5
+
     env:
-      DATABASE_NAME: bitpin_project
-      DATABASE_USER: bitpin_user
-      DATABASE_PASSWORD: bitpin_password
-      DATABASE_HOST: 127.0.0.1
-      DATABASE_PORT: 5432
-      DJANGO_SUPERUSER_USERNAME: admin
-      DJANGO_SUPERUSER_PASSWORD: admin_password
-      DJANGO_SUPERUSER_EMAIL: admin@example.com
+      DATABASE_URL: postgres://postgres:postgres@localhost:5432/test_db
+      CELERY_BROKER_URL: redis://localhost:6379/0
+      CELERY_RESULT_BACKEND: redis://localhost:6379/0
 
     steps:
-    - name: Checkout code
-      uses: actions/checkout@v2
+    - uses: actions/checkout@v2
 
-    - name: Set up Python
+    - name: Set up Python 3.10
       uses: actions/setup-python@v2
       with:
         python-version: 3.10
 
     - name: Install dependencies
       run: |
-        python -m venv venv
-        source venv/bin/activate
+        python -m pip install --upgrade pip
         pip install -r requirements.txt
 
     - name: Run migrations
       run: |
-        source venv/bin/activate
         python manage.py migrate
+
+    - name: Start Celery worker
+      run: |
+        nohup celery -A bitpin_project worker --loglevel=info &
+
+    - name: Start Celery beat
+      run: |
+        nohup celery -A bitpin_project beat --loglevel=info &
 
     - name: Run tests
       run: |
-        source venv/bin/activate
         python manage.py test
