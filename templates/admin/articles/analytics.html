@@ -1,0 +1,61 @@
+{% extends "admin/base_site.html" %}
+{% load i18n %}
+
+{% block content %}
+<h1>Article Analytics</h1>
+<table>
+    <thead>
+        <tr>
+            <th>Title</th>
+            <th>Average Rating</th>
+            <th>Number of Ratings</th>
+        </tr>
+    </thead>
+    <tbody>
+        {% for article in articles %}
+        <tr>
+            <td>{{ article.title }}</td>
+            <td>{{ article.average_rating }}</td>
+            <td>{{ article.num_ratings }}</td>
+        </tr>
+        {% endfor %}
+    </tbody>
+</table>
+
+<h2>Variance Chart</h2>
+<canvas id="varianceChart" width="400" height="200"></canvas>
+
+<script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+<script>
+    document.addEventListener('DOMContentLoaded', function() {
+        const ctx = document.getElementById('varianceChart').getContext('2d');
+        const varianceLabels = JSON.parse('{{ variance_labels|escapejs }}');
+        const varianceValues = JSON.parse('{{ variance_values|escapejs }}');
+
+        const varianceData = {
+            labels: varianceLabels,
+            datasets: [{
+                label: 'Variance',
+                data: varianceValues,
+                backgroundColor: 'rgba(75, 192, 192, 0.2)',
+                borderColor: 'rgba(75, 192, 192, 1)',
+                borderWidth: 1
+            }]
+        };
+
+        const config = {
+            type: 'bar',
+            data: varianceData,
+            options: {
+                scales: {
+                    y: {
+                        beginAtZero: true
+                    }
+                }
+            }
+        };
+
+        const varianceChart = new Chart(ctx, config);
+    });
+</script>
+{% endblock %}

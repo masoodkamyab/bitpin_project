@@ -1,0 +1,64 @@
+name: Django CI
+
+on:
+  push:
+    branches:
+      - main
+  pull_request:
+    branches:
+      - main
+
+jobs:
+  test:
+
+    runs-on: ubuntu-latest
+
+    services:
+      postgres:
+        image: postgres:13
+        env:
+          POSTGRES_DB: bitpin_project
+          POSTGRES_USER: bitpin_user
+          POSTGRES_PASSWORD: bitpin_password
+        ports:
+          - 5432:5432
+        options: >-
+          --health-cmd pg_isready
+          --health-interval 10s
+          --health-timeout 5s
+          --health-retries 5
+
+    env:
+      DATABASE_NAME: bitpin_project
+      DATABASE_USER: bitpin_user
+      DATABASE_PASSWORD: bitpin_password
+      DATABASE_HOST: 127.0.0.1
+      DATABASE_PORT: 5432
+      DJANGO_SUPERUSER_USERNAME: admin
+      DJANGO_SUPERUSER_PASSWORD: admin_password
+      DJANGO_SUPERUSER_EMAIL: admin@example.com
+
+    steps:
+    - name: Checkout code
+      uses: actions/checkout@v2
+
+    - name: Set up Python
+      uses: actions/setup-python@v2
+      with:
+        python-version: 3.10
+
+    - name: Install dependencies
+      run: |
+        python -m venv venv
+        source venv/bin/activate
+        pip install -r requirements.txt
+
+    - name: Run migrations
+      run: |
+        source venv/bin/activate
+        python manage.py migrate
+
+    - name: Run tests
+      run: |
+        source venv/bin/activate
+        python manage.py test
